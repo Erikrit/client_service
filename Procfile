@@ -1,1 +1,0 @@
-web: java -Dquarkus.http.port=$PORT $JAVA_OPTS -jar target/client-service-ritchely-1.0-SNAPSHOT-runner.jar/*-runner.jar
