@@ -7,7 +7,7 @@ import org.olservice.config.dto.DTOUsuario;
 import org.olservice.config.mapper.ModelMapperUtil;
 import org.olservice.config.model._Usuario;
 import org.olservice.config.resource.UsuarioResource;
-import org.olservice.config.securit.TokenUtils;
+
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -34,25 +34,25 @@ public class UsuarioService {
         usuarioResource.save(usuario);
 //        emailService.enviarEmailConfirmacao(usuario);
     }
-    public DTOUsuario verificarUsuario(DTOLogin login) throws Exception{
-           String token =null;
-                List<DTOUsuario> usuarioDto = new ArrayList<>();
-        try {
-
-            usuarioResource.findAll().forEach(usuario -> {
-
-                if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(login.getSenha())) {
-                    TokenUtils.generetToken(login);
-                    usuarioDto.add(converterUsuario(usuario));
-                }else{
-                    throw new WebApplicationException("Usuario ou senha invalida", 403);
-                }
-            });
-        }catch (Exception e){
-            throw new WebApplicationException("Usuario ou senha invalida", 403);
-        }
-       return usuarioDto.get(0);
-    }
+//    public DTOUsuario verificarUsuario(DTOLogin login) throws Exception{
+//           String token =null;
+//                List<DTOUsuario> usuarioDto = new ArrayList<>();
+//        try {
+//
+//            usuarioResource.findAll().forEach(usuario -> {
+//
+//                if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(login.getSenha())) {
+//                    TokenUtils.generetToken(login);
+//                    usuarioDto.add(converterUsuario(usuario));
+//                }else{
+//                    throw new WebApplicationException("Usuario ou senha invalida", 403);
+//                }
+//            });
+//        }catch (Exception e){
+//            throw new WebApplicationException("Usuario ou senha invalida", 403);
+//        }
+//       return usuarioDto.get(0);
+//    }
 
     public void editar(DTOUsuario usuarioDto){
         modelMapper = new ModelMapperUtil();
