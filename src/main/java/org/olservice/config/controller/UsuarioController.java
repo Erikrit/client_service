@@ -47,11 +47,11 @@ public class UsuarioController {
             usuarioService.editar(usuario);
         }
     }
-//    @POST
-//    @Path("/verificar")
-//    public DTOUsuario verificar(DTOLogin login) throws Exception {
-//        return usuarioService.verificarUsuario(login);
-//    }
+    @POST
+    @Path("/verificar")
+    public DTOUsuario verificar(DTOLogin login) throws Exception {
+        return usuarioService.verificarUsuario(login);
+    }
 
     @Inject
     Mailer mailer;

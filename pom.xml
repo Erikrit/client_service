@@ -97,6 +97,15 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-mailer</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt</artifactId>
+      <version>0.7.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-jwt</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
