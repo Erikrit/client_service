@@ -9,7 +9,6 @@ import org.olservice.config.model._Usuario;
 import org.olservice.config.resource.UsuarioResource;
 import org.olservice.config.securit.TokenUtils;
 
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;

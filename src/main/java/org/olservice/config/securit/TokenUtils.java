@@ -47,7 +47,7 @@ public class TokenUtils {
                 .signWith(
                         SignatureAlgorithm.HS256,
                         TextCodec.BASE64.decode(
-                                "/privateKey.pem"
+                               "/privateKey.pem"
                         ))
                 .compact();
         return jwtStr;
