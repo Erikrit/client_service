@@ -7,7 +7,6 @@ import org.olservice.config.dto.DTOUsuario;
 import org.olservice.config.mapper.ModelMapperUtil;
 import org.olservice.config.model._Usuario;
 import org.olservice.config.resource.UsuarioResource;
-import org.olservice.config.securit.TokenUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -27,6 +26,7 @@ public class UsuarioService {
     EmailService emailService;
     @Inject
     UsuarioResource usuarioResource;
+
     public void salvarUsuario(DTOUsuario usuarioDto){
         modelMapper = new ModelMapperUtil();
         _Usuario usuario = modelMapper.map(usuarioDto, (Type) _Usuario.class);
@@ -35,14 +35,13 @@ public class UsuarioService {
 //        emailService.enviarEmailConfirmacao(usuario);
     }
     public DTOUsuario verificarUsuario(DTOLogin login) throws Exception{
-           String token =null;
                 List<DTOUsuario> usuarioDto = new ArrayList<>();
         try {
-
+            List<_Usuario> usuarioList = new ArrayList<>();
+            usuarioList =  usuarioResource.findAll();
             usuarioResource.findAll().forEach(usuario -> {
 
                 if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(login.getSenha())) {
-                    TokenUtils.generetToken(login);
                     usuarioDto.add(converterUsuario(usuario));
                 }else{
                     throw new WebApplicationException("Usuario ou senha invalida", 403);

@@ -14,5 +14,4 @@ public interface Swagger {
     String IMAGEM = "/imagem";
     String ANENOS = "/anenos";
     String ESTADO = "/estado";
-    String Token =   "/token";
 }
