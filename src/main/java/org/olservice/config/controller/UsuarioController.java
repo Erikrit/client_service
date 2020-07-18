@@ -55,7 +55,7 @@ public class UsuarioController {
 
     @Inject
     Mailer mailer;
-
+    
     @GET
     @Path("/TesteEmail")
     public Response sendASimpleEmail() {
