@@ -1,5 +1,10 @@
 package org.olservice.config.service;
 
+import com.dropbox.core.DbxDownloader;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.*;
 import org.olservice.config.dto.*;
 import org.olservice.config.mapper.ModelMapperUtil;
 import org.olservice.config.model.*;
@@ -27,7 +32,6 @@ public class AnunciosService {
     @Inject
     public EntityManager em;
     ModelMapperUtil modelMapper;
-    String diretorio = "D:/Documentos/ProjetosDevope/olservice-quarkus-back/src/main/resources/uploads/";
 
     @Inject
     AnuncioResource anuncioResource;
@@ -35,25 +39,23 @@ public class AnunciosService {
     @Inject
     UsuarioResource usuarioResource;
 
-    public void salvarAnuncio(DTOAnuncio anuncioDto) throws IOException {
+    public void salvarAnuncio(DTOAnuncio anuncioDto) throws IOException, DbxException {
+        String tokenDrobox = "0xr3QHVQX8AAAAAAAAAAFEGZJkUEKpPqSeH2NoQYrc3KFZtlygEyZoMVZDk8uQBG";
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/service_client").build();
+        DbxClientV2 client = new DbxClientV2(config, tokenDrobox);
         modelMapper = new ModelMapperUtil();
         _Anuncio anuncio = modelMapper.map(anuncioDto, (Type) _Anuncio.class);
         anuncio.setDataAnuncio(LocalDateTime.now());
         anuncioResource.save(anuncio);
-        File diretorio = new File(this.diretorio + anuncio.getId());
-        diretorio.mkdirs();
-        String caminho = diretorio.getAbsolutePath();
-
+       String caminho = client.files().createFolderV2("/ImagensApp/"+anuncio.getId()).getMetadata().getPathLower();
         anuncioDto.getImagens().forEach(dtoImagem -> {
-            File file = new File(diretorio.getAbsolutePath() + File.separator + dtoImagem.getNome() + ".jpg");
             dtoImagem.setMidia(dtoImagem.getMidia().replace("data:image/jpeg;base64,", ""));
             byte[] imagemDecode = Base64.getDecoder().decode(dtoImagem.getMidia());
             try {
-                FileOutputStream imagem = new FileOutputStream(file);
-                imagem.write(imagemDecode);
-                imagem.close();
-
-            } catch (IOException e) {
+                InputStream imagem = new ByteArrayInputStream(imagemDecode);
+                client.files().uploadBuilder(caminho+"/"+dtoImagem.getNome()+anuncio.getId()+".jpeg").
+                        uploadAndFinish(imagem);
+            } catch (IOException | DbxException e) {
                 e.printStackTrace();
             }
         });
@@ -74,37 +76,28 @@ public class AnunciosService {
 
     public List<DTOAnuncio> buscarAnuncio() {
         return converterAnuncio(anuncioResource.findAll());
-//        List<DTOAnuncio> anuncios = anuncioResource.findAll().stream().map(anuncioDto ->
-//                new DTOAnuncio(anuncioDto.getTitulo(),anuncioDto.getDescricao(),anuncioDto.getEstado(),anuncioDto.getCidade(),
-//                       String.valueOf(anuncioDto.getValor()), carregarImagens(anuncioDto.getImagem().getCaminhoMidia()),
-//                        converteDtoReferencia(anuncioDto.getReferencia()),anuncioDto.getDiasAtendimento(),
-//                                anuncioDto.getHoraInicial(),anuncioDto.getHoraFim(),converterUsuario(anuncioDto.getUsuario()),converterCategoria(anuncioDto.getCategoria()))).collect(Collectors.toList());
-//        return anuncios;
     }
 
-    public List<DTOImagem> carregarImagens(String caminho) {
-        File file = new File(caminho);
-        File[] list;
-        list = file.listFiles();
+    public List<DTOImagem> carregarImagens(String caminho) throws IOException, DbxException {
+        String tokenDrobox = "0xr3QHVQX8AAAAAAAAAAFEGZJkUEKpPqSeH2NoQYrc3KFZtlygEyZoMVZDk8uQBG";
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/service_client").build();
+        DbxClientV2 client = new DbxClientV2(config, tokenDrobox);
+        ListFolderResult result = client.files().listFolder(caminho);
         List<DTOImagem> listDto = new ArrayList<>();
-        if (list.length > 0) {
-            for (int i = 0; i < list.length; i++) {
-                DTOImagem dtoImagem = new DTOImagem();
-                try {
-                    FileInputStream imagem = new FileInputStream(list[i]);
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    byte[] buf = new byte[1024];
-                    for (int readNum; (readNum = imagem.read(buf)) != -1; ) {
-                        //Writes to this byte array output stream
-                        bos.write(buf, 0, readNum);
-                    }
-                    dtoImagem.setMidia("data:image/jpeg;base64," + Base64.getEncoder().encodeToString(bos.toByteArray()));
-                    listDto.add(dtoImagem);
-                } catch (IOException ex) {
 
+            for (Metadata metadata : result.getEntries()) {
+                DTOImagem dtoImagem = new DTOImagem();
+                DbxDownloader<FileMetadata> downloadBuilder= client.files().downloadBuilder(metadata.getPathLower()).start();
+                InputStream imagem = downloadBuilder.getInputStream();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buf = new byte[1024];
+                for (int readNum; (readNum = imagem.read(buf)) != -1; ) {
+                    //Writes to this byte array output stream
+                    bos.write(buf, 0, readNum);
                 }
+                dtoImagem.setMidia("data:image/jpeg;base64," + Base64.getEncoder().encodeToString(bos.toByteArray()));
+                listDto.add(dtoImagem);
             }
-        }
         return listDto;
     }
 
@@ -129,11 +122,18 @@ public class AnunciosService {
 
     public List<DTOAnuncio> converterAnuncio(List<_Anuncio> anuncios) {
         return anuncios.stream().map(anuncioDto ->
-                new DTOAnuncio(anuncioDto.getId(),anuncioDto.getTitulo(), anuncioDto.getDescricao(), anuncioDto.getEstado(), anuncioDto.getCidade(),
+        {
+            try {
+                return new DTOAnuncio(anuncioDto.getId(),anuncioDto.getTitulo(), anuncioDto.getDescricao(), anuncioDto.getEstado(), anuncioDto.getCidade(),
                         String.valueOf(anuncioDto.getValor()), carregarImagens(anuncioDto.getImagem().getCaminhoMidia()),
                         converteDtoReferencia(anuncioDto.getReferencia()), anuncioDto.getDiasAtendimento(),
                         anuncioDto.getHoraInicial(), anuncioDto.getHoraFim(), converterUsuario(anuncioDto.getUsuario()),
-                        converterCategoria(anuncioDto.getCategoria()),anuncioDto.getFeedBack().stream().map(feedBack -> new DTOFeedback(feedBack.getAnuncio().getId(),feedBack.getUsuario(),feedBack.getDescricao())).collect(Collectors.toList()))).collect(Collectors.toList());
+                        converterCategoria(anuncioDto.getCategoria()),anuncioDto.getFeedBack().stream().map(feedBack -> new DTOFeedback(feedBack.getAnuncio().getId(),feedBack.getUsuario(),feedBack.getDescricao())).collect(Collectors.toList()));
+            } catch (IOException | DbxException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }).collect(Collectors.toList());
     }
 
     public DTOUsuario converterUsuario(_Usuario usuario) {

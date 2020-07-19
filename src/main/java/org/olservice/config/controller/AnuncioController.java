@@ -1,5 +1,6 @@
 package org.olservice.config.controller;
 
+import com.dropbox.core.DbxException;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.olservice.config.Swagger;
 import org.olservice.config.dto.*;
@@ -34,10 +35,9 @@ public class AnuncioController {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/salvar")
-    public void salvar(DTOAnuncio anuncio) throws IOException {
+    public void salvar(DTOAnuncio anuncio) throws IOException, DbxException {
         anunciosService.salvarAnuncio(anuncio);
     }
-
     @PUT
     @Path("/editar")
     public void editar(_Anuncio anuncio) {
