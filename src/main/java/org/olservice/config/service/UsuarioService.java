@@ -34,19 +34,31 @@ public class UsuarioService {
         usuarioResource.save(usuario);
 //        emailService.enviarEmailConfirmacao(usuario);
     }
+
+    public DTOUsuario atualizarUsuario(long idUsuario){
+        return converterUsuario(usuarioResource.findById(idUsuario).get());
+    }
     public DTOUsuario verificarUsuario(DTOLogin login) throws Exception{
                 List<DTOUsuario> usuarioDto = new ArrayList<>();
+
         try {
             List<_Usuario> usuarioList = new ArrayList<>();
-            usuarioList =  usuarioResource.findAll();
             usuarioResource.findAll().forEach(usuario -> {
 
                 if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(login.getSenha())) {
                     usuarioDto.add(converterUsuario(usuario));
-                }else{
-                    throw new WebApplicationException("Usuario ou senha invalida", 403);
+                }
+                if(usuario.getEmail().equals(login.getUsuario())&& !usuario.getSenha().equals(login.getSenha())){
+                    usuarioList.add(usuario);
                 }
             });
+            if(usuarioDto.size()>0){
+                return usuarioDto.get(0);
+            }else {
+                if(usuarioList.size()>0){
+                    throw new WebApplicationException("Usuario ou senha invalida", 403);
+                }
+            }
         }catch (Exception e){
             throw new WebApplicationException("Usuario ou senha invalida", 403);
         }

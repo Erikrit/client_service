@@ -84,6 +84,14 @@ public class AnuncioController {
             throw new WebApplicationException("Id usuario nao pode ser null.", 404);
         }
         anunciosService.salvarFavoritos(favorito);
+
+    }
+    @POST
+    @Path("/remover-favoritos")
+    public void removerFavoritos(DTOFavorito favorito){
+        if(favorito.getIdAnuncio()==null ||favorito.getIdUsuario()==null){
+            throw new WebApplicationException  ("Id usuario nao pode ser null.", 404);
+        }anunciosService.removerFavoritos(favorito);
     }
     @POST
     @Path("/feedback")

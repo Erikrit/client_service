@@ -53,6 +53,11 @@ public class UsuarioController {
         return usuarioService.verificarUsuario(login);
     }
 
+    @POST
+    @Path("/atualizar-Usuario")
+    public DTOUsuario atualizarUsuario(long idUsuario) throws Exception {
+        return usuarioService.atualizarUsuario(idUsuario);
+    }
     @Inject
     Mailer mailer;
     

@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
+@Transactional
 public class AnunciosService {
     @Inject
     public EntityManager em;
@@ -73,6 +75,16 @@ public class AnunciosService {
        usuario.get().getFavoritos().add(anuncio.get());
        usuarioResource.save(usuario.get());
          }
+        @Transactional
+         public void removerFavoritos(DTOFavorito favoritoDto){
+        AtomicReference<_Anuncio> anuncio = new AtomicReference<>(new _Anuncio());
+            _Usuario usuario = usuarioResource.findById(favoritoDto.getIdUsuario()).get();
+             usuario.getFavoritos().stream().filter(favorito -> favorito.getId() ==favoritoDto.getIdAnuncio()).forEach(remover ->{
+            anuncio.set(remover);
+             });
+             usuario.getFavoritos().remove(anuncio.get());
+            usuarioResource.save(usuario);
+        }
 
     public List<DTOAnuncio> buscarAnuncio() {
         return converterAnuncio(anuncioResource.findAll());
