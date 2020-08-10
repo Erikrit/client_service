@@ -14,7 +14,6 @@ public class _Categoria  implements Serializable {
     private Long id;
     @Column(name = "nome")
     private String nome;
-
     @Column(name = "id_categoria_pai")
     private Long idCategoriaPai;
     @Column(name = "icone")

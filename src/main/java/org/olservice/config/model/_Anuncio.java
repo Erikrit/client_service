@@ -22,7 +22,7 @@ public class _Anuncio  implements Serializable {
     @JoinColumn(name = "usuario_id", nullable = false)
     private _Usuario usuario;
 
-    @OneToOne(cascade = ALL)
+    @OneToOne(cascade =CascadeType.ALL)
     @JoinColumn(name = "imagem_id")
     private  _Imagem imagem;
     private String titulo;
@@ -41,6 +41,9 @@ public class _Anuncio  implements Serializable {
     private String horaInicial;
     private String horaFim;
     private LocalDateTime dataAnuncio;
+
+    @ManyToMany(mappedBy="favoritos", cascade = CascadeType.REMOVE)
+    private List<_Usuario> favoritos;
 
     public _Categoria getCategoria() {
         return categoria;
@@ -176,5 +179,13 @@ public class _Anuncio  implements Serializable {
 
     public void setValor(String valor) {
         this.valor = valor;
+    }
+
+    public List<_Usuario> getFavoritos() {
+        return favoritos;
+    }
+
+    public void setFavoritos(List<_Usuario> favoritos) {
+        this.favoritos = favoritos;
     }
 }

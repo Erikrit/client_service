@@ -10,10 +10,10 @@ import org.olservice.config.resource.UsuarioResource;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.persistence.EntityManager;
 import javax.ws.rs.WebApplicationException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @ApplicationScoped
@@ -23,32 +23,34 @@ public class UsuarioService {
 
     @Inject
     AnunciosService anunciosService;
-    EmailService emailService;
+
     @Inject
     UsuarioResource usuarioResource;
 
     public void salvarUsuario(DTOUsuario usuarioDto){
         modelMapper = new ModelMapperUtil();
+        usuarioDto.setSenha(criptografiaBase64Encoder(usuarioDto.getSenha()));
         _Usuario usuario = modelMapper.map(usuarioDto, (Type) _Usuario.class);
         usuario.setStatus(EnumStatus.INATIVO);
         usuarioResource.save(usuario);
+
 //        emailService.enviarEmailConfirmacao(usuario);
     }
 
     public DTOUsuario atualizarUsuario(long idUsuario){
-        return converterUsuario(usuarioResource.findById(idUsuario).get());
+        return converterUsuarioBuscar(usuarioResource.findById(idUsuario).get());
     }
-    public DTOUsuario verificarUsuario(DTOLogin login) throws Exception{
+    public DTOUsuario verificarUsuario(DTOLogin login){
                 List<DTOUsuario> usuarioDto = new ArrayList<>();
 
         try {
             List<_Usuario> usuarioList = new ArrayList<>();
             usuarioResource.findAll().forEach(usuario -> {
 
-                if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(login.getSenha())) {
-                    usuarioDto.add(converterUsuario(usuario));
+                if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(criptografiaBase64Encoder(login.getSenha()))) {
+                    usuarioDto.add(converterUsuarioBuscar(usuario));
                 }
-                if(usuario.getEmail().equals(login.getUsuario())&& !usuario.getSenha().equals(login.getSenha())){
+                if(usuario.getEmail().equals(login.getUsuario())&& !usuario.getSenha().equals(criptografiaBase64Encoder(login.getSenha()))){
                     usuarioList.add(usuario);
                 }
             });
@@ -71,7 +73,7 @@ public class UsuarioService {
         usuarioResource.save(usuario);
     }
 
-    public DTOUsuario converterUsuario(_Usuario usuario){
+    public DTOUsuario converterUsuarioBuscar(_Usuario usuario){
         DTOUsuario dtoUsuario = new DTOUsuario();
         dtoUsuario.setEmail(usuario.getEmail());
         dtoUsuario.setNome(usuario.getNome());
@@ -83,5 +85,11 @@ public class UsuarioService {
         dtoUsuario.setFavoritos(anunciosService.converterAnuncio(usuario.getFavoritos()));
         return dtoUsuario;
     }
+    public static String criptografiaBase64Encoder(String valor) {
+        return Base64.getEncoder().encodeToString(valor.getBytes());
+    }
 
+    public static String descriptografiaBase64Decoder(String valorCriptografado) {
+        return new String(Base64.getDecoder().decode(valorCriptografado));
+    }
 }

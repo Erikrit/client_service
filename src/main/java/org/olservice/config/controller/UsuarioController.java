@@ -52,7 +52,6 @@ public class UsuarioController {
     public DTOUsuario verificar(DTOLogin login) throws Exception {
         return usuarioService.verificarUsuario(login);
     }
-
     @POST
     @Path("/atualizar-Usuario")
     public DTOUsuario atualizarUsuario(long idUsuario) throws Exception {
@@ -67,5 +66,4 @@ public class UsuarioController {
         mailer.send(Mail.withText("Erikri_1995@hotmail.com", "A simple email from quarkus", "This is my body"));
         return Response.accepted().build();
     }
-
 }

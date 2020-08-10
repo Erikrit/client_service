@@ -27,14 +27,11 @@ public class _Usuario implements Serializable {
 
     private String telefone;
 
-    @OneToMany(mappedBy = "usuario",fetch = FetchType.LAZY)
-    private List<_Anuncio> anuncios;
-
     @OneToOne
     private _Classificacao classificacao;
 
     @ManyToMany
-    @JoinTable(name="favoritos",joinColumns = @JoinColumn(name = "id_usuario"), inverseJoinColumns = @JoinColumn(name = "id_anuncio"))
+    @JoinTable(name="favorito",joinColumns = @JoinColumn(name = "id_usuario"), inverseJoinColumns = @JoinColumn(name = "id_anuncio"))
     private List<_Anuncio> favoritos;
 
     public String getTelefone() {
@@ -108,13 +105,6 @@ public class _Usuario implements Serializable {
         this.classificacao = classificacao;
     }
 
-    public List<_Anuncio> getFavoritos() {
-        return favoritos;
-    }
-
-    public void setFavoritos(List<_Anuncio> favoritos) {
-        this.favoritos = favoritos;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -127,5 +117,13 @@ public class _Usuario implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(email);
+    }
+
+    public List<_Anuncio> getFavoritos() {
+        return favoritos;
+    }
+
+    public void setFavoritos(List<_Anuncio> favoritos) {
+        this.favoritos = favoritos;
     }
 }

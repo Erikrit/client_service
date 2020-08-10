@@ -23,8 +23,8 @@ public class AnuncioController {
 
     @Inject
     AnunciosService anunciosService;
-    @Inject
-    AnuncioResource anunciosResource;
+
+
     @GET
     @Path("/listar")
     @Produces(MediaType.APPLICATION_JSON)
@@ -38,14 +38,18 @@ public class AnuncioController {
     public void salvar(DTOAnuncio anuncio) throws IOException, DbxException {
         anunciosService.salvarAnuncio(anuncio);
     }
-    @PUT
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/editar")
-    public void editar(_Anuncio anuncio) {
-        if (anuncio.getId() != null) {
-            anunciosResource.save(anuncio);
-        }
+    public void editar(DTOAnuncio anuncio) throws IOException, DbxException {
+        anunciosService.editarAnuncio(anuncio);
     }
-
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/deletar")
+    public void deletar(Long id) throws IOException, DbxException {
+        anunciosService.deletarAnuncio(id);
+    }
     @POST
     @Path("/salvar/anexo/{id}")
     public void anexo(@PathParam(value = "id") String id) throws IOException, JAXBException {
@@ -91,7 +95,8 @@ public class AnuncioController {
     public void removerFavoritos(DTOFavorito favorito){
         if(favorito.getIdAnuncio()==null ||favorito.getIdUsuario()==null){
             throw new WebApplicationException  ("Id usuario nao pode ser null.", 404);
-        }anunciosService.removerFavoritos(favorito);
+        }
+        anunciosService.removerFavoritos(favorito);
     }
     @POST
     @Path("/feedback")

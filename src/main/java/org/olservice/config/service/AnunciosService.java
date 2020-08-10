@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static org.olservice.config.service.UsuarioService.descriptografiaBase64Decoder;
+
 @ApplicationScoped
 @Transactional
 public class AnunciosService {
@@ -41,13 +43,15 @@ public class AnunciosService {
     @Inject
     UsuarioResource usuarioResource;
 
-    public void salvarAnuncio(DTOAnuncio anuncioDto) throws IOException, DbxException {
+
+    public void salvarAnuncio(DTOAnuncio anuncioDto) throws DbxException {
         String tokenDrobox = "0xr3QHVQX8AAAAAAAAAAFEGZJkUEKpPqSeH2NoQYrc3KFZtlygEyZoMVZDk8uQBG";
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/service_client").build();
         DbxClientV2 client = new DbxClientV2(config, tokenDrobox);
         modelMapper = new ModelMapperUtil();
         _Anuncio anuncio = modelMapper.map(anuncioDto, (Type) _Anuncio.class);
         anuncio.setDataAnuncio(LocalDateTime.now());
+
         anuncioResource.save(anuncio);
        String caminho = client.files().createFolderV2("/ImagensApp/"+anuncio.getId()).getMetadata().getPathLower();
         anuncioDto.getImagens().forEach(dtoImagem -> {
@@ -90,11 +94,39 @@ public class AnunciosService {
         return converterAnuncio(anuncioResource.findAll());
     }
 
+    public void editarAnuncio(DTOAnuncio anuncioDto){
+        _Anuncio anuncio = anuncioResource.findById(anuncioDto.getId()).get();
+        String tokenDrobox = "0xr3QHVQX8AAAAAAAAAAFEGZJkUEKpPqSeH2NoQYrc3KFZtlygEyZoMVZDk8uQBG";
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/service_client").build();
+        DbxClientV2 client = new DbxClientV2(config, tokenDrobox);
+        try {
+           DeleteResult resultDelete = client.files().deleteV2(anuncio.getImagem().getCaminhoMidia());
+           resultDelete.toString();
+           salvarAnuncio(anuncioDto);
+        } catch (DbxException e) {
+            e.printStackTrace();
+        }
+    }
+    public void deletarAnuncio(Long anuncioDto){
+        _Anuncio anuncio = anuncioResource.findById(anuncioDto).get();
+        anuncio.getFavoritos().remove(anuncio);
+         String tokenDrobox = "0xr3QHVQX8AAAAAAAAAAFEGZJkUEKpPqSeH2NoQYrc3KFZtlygEyZoMVZDk8uQBG";
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/service_client").build();
+        DbxClientV2 client = new DbxClientV2(config, tokenDrobox);
+        try {
+            anuncioResource.delete(anuncio);
+            client.files().deleteV2(anuncio.getImagem().getCaminhoMidia());
+        } catch (DbxException e) {
+            e.printStackTrace();
+        }
+    }
+
     public List<DTOImagem> carregarImagens(String caminho) throws IOException, DbxException {
         String tokenDrobox = "0xr3QHVQX8AAAAAAAAAAFEGZJkUEKpPqSeH2NoQYrc3KFZtlygEyZoMVZDk8uQBG";
         DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/service_client").build();
         DbxClientV2 client = new DbxClientV2(config, tokenDrobox);
         ListFolderResult result = client.files().listFolder(caminho);
+        
         List<DTOImagem> listDto = new ArrayList<>();
 
             for (Metadata metadata : result.getEntries()) {
@@ -139,7 +171,7 @@ public class AnunciosService {
                 return new DTOAnuncio(anuncioDto.getId(),anuncioDto.getTitulo(), anuncioDto.getDescricao(), anuncioDto.getEstado(), anuncioDto.getCidade(),
                         String.valueOf(anuncioDto.getValor()), carregarImagens(anuncioDto.getImagem().getCaminhoMidia()),
                         converteDtoReferencia(anuncioDto.getReferencia()), anuncioDto.getDiasAtendimento(),
-                        anuncioDto.getHoraInicial(), anuncioDto.getHoraFim(), converterUsuario(anuncioDto.getUsuario()),
+                        anuncioDto.getHoraInicial(), anuncioDto.getHoraFim(), converterUsuarioBuscar(anuncioDto.getUsuario()),
                         converterCategoria(anuncioDto.getCategoria()),anuncioDto.getFeedBack().stream().map(feedBack -> new DTOFeedback(feedBack.getAnuncio().getId(),feedBack.getUsuario(),feedBack.getDescricao())).collect(Collectors.toList()));
             } catch (IOException | DbxException e) {
                 e.printStackTrace();
@@ -148,18 +180,17 @@ public class AnunciosService {
         }).collect(Collectors.toList());
     }
 
-    public DTOUsuario converterUsuario(_Usuario usuario) {
+    public DTOUsuario converterUsuarioBuscar(_Usuario usuario){
         DTOUsuario dtoUsuario = new DTOUsuario();
         dtoUsuario.setEmail(usuario.getEmail());
         dtoUsuario.setNome(usuario.getNome());
         dtoUsuario.setSobreNome(usuario.getSobreNome());
         dtoUsuario.setTelefone(usuario.getTelefone());
         dtoUsuario.setStatus(usuario.getStatus().getDescricao());
-        dtoUsuario.setSenha(usuario.getSenha());
+        dtoUsuario.setSenha(descriptografiaBase64Decoder(usuario.getSenha()));
         dtoUsuario.setId(usuario.getId());
         return dtoUsuario;
     }
-
 
     public DTOCategoria converterCategoria(_Categoria categoria) {
         DTOCategoria dtoCategorio = new DTOCategoria();
@@ -209,7 +240,6 @@ public class AnunciosService {
 
         return anunciosList;
     }
-
 
         public List<DTOAnuncio> buscarFeedback(int idUsuario){
             CriteriaBuilder criteria = em.getCriteriaBuilder();
