@@ -1,70 +1,45 @@
 package org.olservice.config.service;
-
-
 import org.olservice.config.Enum.EnumStatus;
 import org.olservice.config.dto.DTOLogin;
 import org.olservice.config.dto.DTOUsuario;
 import org.olservice.config.mapper.ModelMapperUtil;
 import org.olservice.config.model._Usuario;
 import org.olservice.config.resource.UsuarioResource;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import javax.ws.rs.WebApplicationException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
+@Transactional
 public class UsuarioService {
 
     ModelMapperUtil modelMapper;
-
-    @Inject
-    AnunciosService anunciosService;
-
+   static AnunciosService anunciosService = new AnunciosService();
     @Inject
     UsuarioResource usuarioResource;
-
     public void salvarUsuario(DTOUsuario usuarioDto){
         modelMapper = new ModelMapperUtil();
         usuarioDto.setSenha(criptografiaBase64Encoder(usuarioDto.getSenha()));
         _Usuario usuario = modelMapper.map(usuarioDto, (Type) _Usuario.class);
         usuario.setStatus(EnumStatus.INATIVO);
         usuarioResource.save(usuario);
-
 //        emailService.enviarEmailConfirmacao(usuario);
     }
 
     public DTOUsuario atualizarUsuario(long idUsuario){
-        return converterUsuarioBuscar(usuarioResource.findById(idUsuario).get());
+        return converterUsuario(usuarioResource.findById(idUsuario).get());
     }
     public DTOUsuario verificarUsuario(DTOLogin login){
-                List<DTOUsuario> usuarioDto = new ArrayList<>();
-
-        try {
-            List<_Usuario> usuarioList = new ArrayList<>();
-            usuarioResource.findAll().forEach(usuario -> {
-
-                if (usuario.getEmail().equals(login.getUsuario()) && usuario.getSenha().equals(criptografiaBase64Encoder(login.getSenha()))) {
-                    usuarioDto.add(converterUsuarioBuscar(usuario));
-                }
-                if(usuario.getEmail().equals(login.getUsuario())&& !usuario.getSenha().equals(criptografiaBase64Encoder(login.getSenha()))){
-                    usuarioList.add(usuario);
-                }
-            });
-            if(usuarioDto.size()>0){
-                return usuarioDto.get(0);
-            }else {
-                if(usuarioList.size()>0){
-                    throw new WebApplicationException("Usuario ou senha invalida", 403);
-                }
-            }
-        }catch (Exception e){
+        _Usuario usuarioBanco = buscarUsuarioFazendoLogin(login);
+        if(usuarioBanco!=null){
+            return converterUsuario(usuarioBanco);
+        }else{
             throw new WebApplicationException("Usuario ou senha invalida", 403);
         }
-       return usuarioDto.get(0);
     }
 
     public void editar(DTOUsuario usuarioDto){
@@ -73,7 +48,7 @@ public class UsuarioService {
         usuarioResource.save(usuario);
     }
 
-    public DTOUsuario converterUsuarioBuscar(_Usuario usuario){
+    public static DTOUsuario converterUsuario(_Usuario usuario){
         DTOUsuario dtoUsuario = new DTOUsuario();
         dtoUsuario.setEmail(usuario.getEmail());
         dtoUsuario.setNome(usuario.getNome());
@@ -85,8 +60,16 @@ public class UsuarioService {
         dtoUsuario.setFavoritos(anunciosService.converterAnuncio(usuario.getFavoritos()));
         return dtoUsuario;
     }
+
     public static String criptografiaBase64Encoder(String valor) {
         return Base64.getEncoder().encodeToString(valor.getBytes());
+    }
+
+    public _Usuario buscarUsuarioFazendoLogin(DTOLogin usuarioLogin){
+      return usuarioResource.findAll().stream().filter(usuario
+                -> usuario.getEmail().equals(usuarioLogin.getEmail()) &&
+                usuario.getSenha().equals(criptografiaBase64Encoder(usuarioLogin.getSenha()))).
+                collect(Collectors.toList()).get(0);
     }
 
     public static String descriptografiaBase64Decoder(String valorCriptografado) {

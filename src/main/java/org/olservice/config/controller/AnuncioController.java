@@ -55,11 +55,7 @@ public class AnuncioController {
     public void anexo(@PathParam(value = "id") String id) throws IOException, JAXBException {
 
     }
-//    @POST
-//    @Path("/buscar/filtro")
-//    public List<DTOAnuncio> filtrarAnuncio(DTOFiltro filtro) {
-//      return anunciosService.buscarComFiltro(filtro);
-//    }
+
     @POST
     @Path("/buscar/filtro2")
     public List<DTOAnuncio> filtrarAnuncio2(DTOFiltro2 filtro) {

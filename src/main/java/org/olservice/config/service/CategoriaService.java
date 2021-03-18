@@ -33,8 +33,6 @@ public class CategoriaService {
          CriteriaBuilder criteria = em.getCriteriaBuilder();
          CriteriaQuery<_Categoria> query = criteria.createQuery(_Categoria.class);
          Root<_Categoria> root = query.from(_Categoria.class);
-
-
          query.select(root).where(criteria.equal(root.get(_Categoria_.ID_CATEGORIA_PAI), 0));
          query.orderBy(criteria.asc(root.get("nome")));
          return em.createQuery(query).getResultList();
